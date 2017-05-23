@@ -103,37 +103,41 @@ var openPairs = {};
 
 var doYoShit = function(event, pair) {
   if (event.type === 'orderBookModify') {
-    // console.log(event, 'ZE OPEN 111 ');
     if (event.data.type === 'bid') {
-      // openPairs[pair] += event.amount;
       openPairs[pair].orderBookModify_BIDS++;
-      // console.log('Ze Open', openPairs[pair], 'Pair:', pair);
-
+      openPairs[pair].bidChanges += (parseFloat(event.data.amount) * parseFloat(event.data.rate));
+      openPairs[pair].totalChangeCount++;
     };
 
     if (event.data.type === 'ask') {
-      // openPairs[pair] += event.amount;
       openPairs[pair].orderBookModify_ASKS++;
-      // console.log('Ze Open', openPairs[pair], 'Pair:', pair);
-
+      openPairs[pair].askChanges += (parseFloat(event.data.amount) * parseFloat(event.data.rate));
+      openPairs[pair].totalChangeCount++;
     };
 
 
-    // console.log(pair, 'MODIFY', openPairs);
   }
   if (event.type === 'orderBookRemove') {
     // console.log(pair, 'REMOVE', event);
     openPairs[pair].orderBookRemove++;
+    openPairs[pair].totalChangeCount++;
   }
   if (event.type === 'newTrade') {
     // console.log(pair, 'NEWTRADE', event);
     openPairs[pair].newTrade++;
+    openPairs[pair].totalChangeCount++;
+    if (event.data.type === 'buy') {
+      openPairs[pair].buyVolume += parseFloat(event.data.total);
+    }
+    if (event.data.type === 'sell') {
+      openPairs[pair].sellVolume += parseFloat(event.data.total);
+    }
   }
 };
 
 var sortedOpenPairs = function(pairs) {
   return Object.keys(pairs).sort(function(a, b) {
-    return pairs[b].newTrade - pairs[a].newTrade;
+    return pairs[b].totalChangeCount - pairs[a].totalChangeCount;
   });
 };
 
@@ -153,7 +157,12 @@ connection.onopen = function (session) {
       orderBookModify_BIDS: 0,
       orderBookModify_ASKS: 0,
       newTrade: 0,
-      orderBookRemove: 0
+      orderBookRemove: 0,
+      buyVolume: 0,
+      sellVolume: 0,
+      bidChanges: 0,
+      askChanges: 0,
+      totalChangeCount: 0
     };
     startMarket(pair, session);
   });
@@ -166,7 +175,8 @@ connection.onclose = function () {
 setInterval(function() {
   var orders = new poloOrders();
   var sorted = sortedOpenPairs(openPairs);
-  orders.created_at = moment().toDate();
+  console.log('Order Pairs: ', openPairs);
+  orders.created_at = Moment().toDate();
   orders.order_books = openPairs;
   orders.save(function(err, data) {
     if (err) {
@@ -178,7 +188,12 @@ setInterval(function() {
           orderBookModify_BIDS: 0,
           orderBookModify_ASKS: 0,
           newTrade: 0,
-          orderBookRemove: 0
+          orderBookRemove: 0,
+          buyVolume: 0,
+          sellVolume: 0,
+          bidChanges: 0,
+          askChanges: 0,
+          totalChangeCount: 0
         };
       });
     }
