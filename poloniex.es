@@ -97,22 +97,56 @@ var allMarkets = ['BTC_AMP',
 'XMR_NXT',
 'XMR_ZEC'];
 
+const openPairs = {};
+
+var doYoShit = function(event, pair) {
+  if (event.type === 'orderBookModify') {
+    // console.log(event, 'ZE OPEN 111 ');
+    if (event.data.type === 'bid') {
+      // openPairs[pair] += event.amount;
+      openPairs[pair].orderBookModify_BIDS++;
+      // console.log('Ze Open', openPairs[pair], 'Pair:', pair);
+
+    };
+
+    if (event.data.type === 'ask') {
+      // openPairs[pair] += event.amount;
+      openPairs[pair].orderBookModify_ASKS++;
+      // console.log('Ze Open', openPairs[pair], 'Pair:', pair);
+
+    };
+
+
+    // console.log(pair, 'MODIFY', openPairs);
+  }
+  if (event.type === 'orderBookRemove') {
+    // console.log(pair, 'REMOVE', event);
+  }
+  if (event.type === 'newTrade') {
+    // console.log(pair, 'NEWTRADE', event);
+  }
+};
+
 var startMarket = function(pair, session) {
   function marketEvent (args,kwarg) {
-    console.log(args, 'KWARG: ', pair);
-  }
-  function tickerEvent (args,kwarg) {
-    console.log(args, 'KWARG: ', pair);
-  }
-  function trollboxEvent (args,kwarg) {
-    console.log(args, 'KWARG: ', pair);
+    // console.log('MARKET EVENT: \n', args, 'PAIR: ', pair);
+    console.log('Ze Open', openPairs);
+    args.forEach(function(event) {
+      doYoShit(event, pair);
+    });
   }
   session.subscribe(pair, marketEvent);
-  session.subscribe('ticker', tickerEvent);
+
 };
 
 connection.onopen = function (session) {
   allMarkets.forEach(function(pair) {
+    openPairs[pair] = {
+      orderBookModify_BIDS: 0,
+      orderBookModify_ASKS: 0,
+      newTrade: 0,
+      orderBookRemove: 0
+    };
     startMarket(pair, session);
   });
 
