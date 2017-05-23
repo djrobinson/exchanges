@@ -121,16 +121,32 @@ var doYoShit = function(event, pair) {
   }
   if (event.type === 'orderBookRemove') {
     // console.log(pair, 'REMOVE', event);
+    openPairs[pair].orderBookRemove++;
   }
   if (event.type === 'newTrade') {
     // console.log(pair, 'NEWTRADE', event);
+    openPairs[pair].newTrade++;
   }
+};
+
+var sortedOpenPairs = function(pairs) {
+  return Object.keys(pairs).sort(function(a, b) {
+    return pairs[b].newTrade - pairs[a].newTrade;
+  });
 };
 
 var startMarket = function(pair, session) {
   function marketEvent (args,kwarg) {
-    // console.log('MARKET EVENT: \n', args, 'PAIR: ', pair);
-    console.log('Ze Open', openPairs);
+    const sorted = sortedOpenPairs(openPairs);
+    console.log('#1: ', sorted[0], openPairs[sorted[0]]);
+    console.log('#2: ', sorted[1], openPairs[sorted[1]]);
+    console.log('#3: ', sorted[2], openPairs[sorted[2]]);
+    console.log('#4: ', sorted[3], openPairs[sorted[3]]);
+    console.log('#5: ', sorted[4], openPairs[sorted[4]]);
+    console.log('#6: ', sorted[5], openPairs[sorted[5]]);
+    console.log('#7: ', sorted[6], openPairs[sorted[6]]);
+    console.log('#8: ', sorted[7], openPairs[sorted[7]]);
+
     args.forEach(function(event) {
       doYoShit(event, pair);
     });
