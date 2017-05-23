@@ -4,7 +4,9 @@ var connection = new autobahn.Connection({
   url: wsuri,
   realm: "realm1"
 });
+var Moment = require('moment');
 
+var poloOrders = require('./schemas/polo_orders');
 
 var allMarkets = ['BTC_AMP',
 'BTC_ARDR',
@@ -97,7 +99,7 @@ var allMarkets = ['BTC_AMP',
 'XMR_NXT',
 'XMR_ZEC'];
 
-const openPairs = {};
+var openPairs = {};
 
 var doYoShit = function(event, pair) {
   if (event.type === 'orderBookModify') {
@@ -137,25 +139,15 @@ var sortedOpenPairs = function(pairs) {
 
 var startMarket = function(pair, session) {
   function marketEvent (args,kwarg) {
-    const sorted = sortedOpenPairs(openPairs);
-    console.log('#1: ', sorted[0], openPairs[sorted[0]]);
-    console.log('#2: ', sorted[1], openPairs[sorted[1]]);
-    console.log('#3: ', sorted[2], openPairs[sorted[2]]);
-    console.log('#4: ', sorted[3], openPairs[sorted[3]]);
-    console.log('#5: ', sorted[4], openPairs[sorted[4]]);
-    console.log('#6: ', sorted[5], openPairs[sorted[5]]);
-    console.log('#7: ', sorted[6], openPairs[sorted[6]]);
-    console.log('#8: ', sorted[7], openPairs[sorted[7]]);
-
     args.forEach(function(event) {
       doYoShit(event, pair);
     });
   }
   session.subscribe(pair, marketEvent);
-
 };
 
 connection.onopen = function (session) {
+  console.log('Opening connection');
   allMarkets.forEach(function(pair) {
     openPairs[pair] = {
       orderBookModify_BIDS: 0,
@@ -165,11 +157,33 @@ connection.onopen = function (session) {
     };
     startMarket(pair, session);
   });
-
 };
 
 connection.onclose = function () {
   console.log("Websocket connection closed");
 };
 
-connection.open();
+setInterval(function() {
+  var orders = new poloOrders();
+  var sorted = sortedOpenPairs(openPairs);
+  orders.created_at = moment().toDate();
+  orders.order_books = openPairs;
+  orders.save(function(err, data) {
+    if (err) {
+      throw err;
+    } else {
+      console.log('DATA SAVED: ', data);
+      allMarkets.forEach(function(pair) {
+        openPairs[pair] = {
+          orderBookModify_BIDS: 0,
+          orderBookModify_ASKS: 0,
+          newTrade: 0,
+          orderBookRemove: 0
+        };
+      });
+    }
+  })
+}, 60000)
+
+
+module.exports = connection;
