@@ -21,4 +21,4 @@ var pullData = function() {
   })
 };
 
-pullData();
+pullData();;

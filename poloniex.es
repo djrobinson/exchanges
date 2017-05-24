@@ -30,12 +30,10 @@ var doYoShit = function(event, pair) {
 
   }
   if (event.type === 'orderBookRemove') {
-    // console.log(pair, 'REMOVE', event);
     openPairs[pair].orderBookRemove++;
     openPairs[pair].totalChangeCount++;
   }
   if (event.type === 'newTrade') {
-    // console.log(pair, 'NEWTRADE', event);
     openPairs[pair].newTrade++;
     openPairs[pair].totalChangeCount++;
     if (event.data.type === 'buy') {
@@ -87,14 +85,13 @@ connection.onclose = function () {
 setInterval(function() {
   var orders = new poloOrders();
   var sorted = sortedOpenPairs(openPairs);
-  console.log('Order Pairs: ', openPairs);
   orders.created_at = Moment().toDate();
   orders.order_books = openPairs;
   orders.save(function(err, data) {
     if (err) {
       throw err;
     } else {
-      console.log('DATA SAVED: ', data);
+      console.log('Data Saved: ', data);
       allMarkets.forEach(function(pair) {
         openPairs[pair] = {
           orderBookModify_BIDS: 0,
