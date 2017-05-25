@@ -12,9 +12,39 @@ router.get('/poloorders', function(req, res) {
   });
 });
 
+const d3formatter = (data, type) => {
+  var pairKeys = Object.keys(data[0].order_books);
+  // const averageChange = data.reduce((acc, value) => {
+  //   pairKeys.forEach(val => {
+  //     var current = acc[val] || 0;
+  //     if (value.order_books) {
+  //       acc[val] = current + value.order_books[val].totalChangeCount;
+  //     }
+  //   })
+  //   return acc;
+  // }, {});
+  // console.log('Average Changes: ', averageChange);
+  const returnValue = data.reduce((acc, value) => {
+
+
+    const dayPairs = pairKeys.map(val => {
+      const orderBookNormalizer = (value.order_books[val].orderBookRemove < 5) ? 5 : value.order_books[val].orderBookRemove;
+      const orderBookNormalizer2 = (value.order_books[val].orderBookRemove > 30) ? 30 : value.order_books[val].orderBookRemove;
+      return {
+        pair: val,
+        minute: Moment(value.created_at).utc().format(),
+        value:orderBookNormalizer
+      }
+    });
+    return acc.concat(dayPairs);
+  }, [])
+  return returnValue;
+}
+//created_at: 2017-05-24T22:20:11.649Z
+
 router.get('/poloorders/five', function(req, res) {
-  var now = Moment();
-  var xMinutesAgo = now.subtract(5, 'minutes');
+  var now = Moment('2017-05-24T22:20:11Z');
+  var xMinutesAgo = now.subtract(60, 'minutes');
   var xMinDate = xMinutesAgo.toDate();
   poloOrders.find({
     "created_at": {
@@ -24,13 +54,14 @@ router.get('/poloorders/five', function(req, res) {
     if (err) {
       res.json(err);
     }
-    res.json(data)
+    const formatted = d3formatter(data);
+    res.json(formatted)
   })
 })
 
 router.get('/poloorders/thirty', function(req, res) {
-  var now = Moment();
-  var xMinutesAgo = now.subtract(30, 'minutes');
+  var now = Moment('2017-05-25T19:33:16.801Z');
+  var xMinutesAgo = now.subtract(210, 'minutes');
   var xMinDate = xMinutesAgo.toDate();
   poloOrders.find({
     "created_at": {
@@ -40,7 +71,8 @@ router.get('/poloorders/thirty', function(req, res) {
     if (err) {
       res.json(err);
     }
-    res.json(data)
+    const formatted = d3formatter(data);
+    res.json(formatted)
   })
 });
 
