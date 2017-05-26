@@ -32,6 +32,12 @@ var doYoShit = function(event, pair) {
   if (event.type === 'orderBookRemove') {
     openPairs[pair].orderBookRemove++;
     openPairs[pair].totalChangeCount++;
+    if (event.data.type === 'ask') {
+      openPairs[pair].orderBookRemoveAsk++;
+    }
+    if (event.data.type === 'bid') {
+      openPairs[pair].orderBookRemoveBid++;
+    }
   }
   if (event.type === 'newTrade') {
     openPairs[pair].newTrade++;
@@ -72,7 +78,9 @@ connection.onopen = function (session) {
       sellVolume: 0,
       bidChanges: 0,
       askChanges: 0,
-      totalChangeCount: 0
+      totalChangeCount: 0,
+      orderBookRemoveAsk: 0,
+      orderBookRemoveBid: 0
     };
     startMarket(pair, session);
   });
@@ -102,7 +110,9 @@ setInterval(function() {
           sellVolume: 0,
           bidChanges: 0,
           askChanges: 0,
-          totalChangeCount: 0
+          totalChangeCount: 0,
+          orderBookRemoveAsk: 0,
+          orderBookRemoveBid: 0
         };
       });
     }

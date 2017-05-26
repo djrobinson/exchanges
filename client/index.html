@@ -22,7 +22,18 @@
         fill: #000;
       }
       .d3-tip {
-
+        background: rgba(255, 255, 255, .5);
+        height: 100px;
+        width: 100px;
+        text-align: center;
+        p {
+          margin: 0;
+          padding: 0;
+        }
+        * {
+          margin: 0;
+          padding: 0;
+        }
       }
     </style>
     <script src="http://d3js.org/d3.v3.js"></script>
@@ -37,8 +48,10 @@
 
 
 
-      var heatmapChart = function() {
-          d3.json('http://localhost:3000/poloorders/thirty', function(data) {
+      var heatmapChart = function(type) {
+          console.log('Running agaain')
+          d3.json('http://localhost:3000/poloorders/five', function(data) {
+            console.log('Data: ', data);
             var pairs = data.reduce((acc, next) => {
                 if (acc.indexOf(next.pair) === -1) {
                     acc.push(next.pair);
@@ -57,17 +70,19 @@
               .attr('class', 'd3-tip')
               .offset([10, 0])
               .html(function(d) {
-                  return "<strong>Frequency:</strong> <span style='color:red'>" + d.value + "</span>";
-                })
+                return "<div><p>" + d.pair + " " +  d.minute + " " + (d.orderBookRemoveAsk - d.orderBookRemoveBid) + "</p><p>Bid Removes: " + d.orderBookRemoveBid + "</p><p>Ask Removes: " + d.orderBookRemoveAsk + "</p></div>";
+              })
+              // .html(function(d) {
+              //     return "<div><p>" + d.minute + "</p><p>" + d.pair + " : " + d.value + "</p><p>Ask Mods: " + d.orderBookModify_ASKS + "</p><p>Bid Mods: " + d.orderBookModify_BIDS + "</p><p>Buy Volume: " + d.buyVolume + "</p><p>Sell Volume: " + d.sellVolume + "</p><p>Removes: " + d.orderBookRemove + "</p></div>";
+              //   })
 
-            console.log('Times and Pairs: ', times, pairs);
             var margin = { top: 150, right: 100, bottom: 100, left: 10 },
-                width = 4000 - margin.left,
+                width = 10500 - margin.left,
                 height = 3000 - margin.top - margin.bottom,
                 gridSize = Math.floor(height / 150),
                 legendElementWidth = gridSize,
-                buckets = 9,
-                colors = ["#ffffd9","#edf8b1","#c7e9b4","#7fcdbb","#41b6c4","#1d91c0","#225ea8","#253494","#081d58"], // alternatively colorbrewer.YlGnBu[9]
+                buckets = 10,
+                colors = ["#a50026","#d73027","#f46d43","#fdae61","#fee08b","#d9ef8b","#a6d96a","#66bd63","#1a9850",  "#006837"], // alternatively colorbrewer.YlGnBu[9]
 
                 datasets = ["data.tsv", "data2.tsv"];
 
@@ -82,7 +97,7 @@
                 .data(pairs)
                 .enter().append("text")
                   .text(function (d) { return d; })
-                  .attr("x", width + 40)
+                  .attr("x", width + 100)
                   .attr("y", function (d, i) { return i * gridSize; })
                   .style("text-anchor", "end")
                   .attr("transform", "translate(-6," + gridSize / 1.5 + ")")
