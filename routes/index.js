@@ -16,7 +16,7 @@ var mainPairs = ['ETH_ETC', 'ETH_ZEC', 'BTC_XRP', 'BTC_ETH', 'BTC_ETC', 'BTC_XMR
 
 const d3formatter = (data, type) => {
   var pairKeys = mainPairs;
-  const sortedChanges = data.reduce((acc, value) => {
+  const sortedChangesByPair = data.reduce((acc, value) => {
     pairKeys.forEach(val => {
       var current = (!acc[val]) ? [] : acc[val];
       if (value.order_books) {
@@ -26,18 +26,45 @@ const d3formatter = (data, type) => {
     })
     return acc;
   }, {});
+  const sortedChangesAll = data.reduce((acc, value) => {
+    pairKeys.forEach(val => {
+      if (value.order_books) {
+        acc.push(value.order_books[val].orderBookRemoveAsk - value.order_books[val].orderBookRemoveBid)
+      }
+    })
+    return acc;
+  }, []);
+  console.log('Begin Sort: ', sortedChangesByPair);
 
   const n = data.length + 1;
+  const allN = (data.length + 1) * (mainPairs.length + 1)
+  const allD = Math.floor(allN / 10);
   const d = Math.floor(n / 10);
   function sortNumber(a,b) {
     return a - b;
   }
-  var superSorted = pairKeys.reduce((acc, val) => {
-    const s = sortedChanges[val].sort(sortNumber);
-    console.log('Did S sort right?', s);
-    acc[val] = [s[0], s[d * 2], s[d * 3], s[d * 4], s[d * 5], s[d * 6], s[d * 7], s[d * 8], s[d * 9]];
+  const averaged = data.reduce((acc, value) => {
+    pairKeys.forEach(val => {
+      var current = acc[val] || 0;
+      if (value.order_books) {
+        current += ((value.order_books[val].orderBookModify_BIDS - value.order_books[val].orderBookRemoveBid) - (value.order_books[val].orderBookModify_ASKS - value.order_books[val].orderBookRemoveAsk));
+        acc[val] = current;
+      }
+    });
     return acc;
   }, {});
+  // console.log('Averaged!', averaged);
+  var superSorted = pairKeys.reduce((acc, val) => {
+    const s = sortedChangesByPair[val].sort(sortNumber);
+    acc[val] = [s[0], s[d], s[d * 2], s[d * 3], s[d * 4], s[d * 5], s[d * 6], s[d * 7], s[d * 8], s[d * 9]];
+    return acc;
+  }, {});
+  var superSortedAll = pairKeys.reduce((acc, val) => {
+    const s = sortedChangesAll.sort(sortNumber);
+    var dec = [s[0], s[allD], s[allD * 2], s[allD * 3], s[allD * 4], s[allD * 5], s[allD * 6], s[allD * 7], s[allD * 8], s[allD * 9]];
+    return dec;
+  });
+  console.log('Super Sorted: ', superSortedAll);
   function normalizeData(count, val) {
     var iterator = 0;
     superSorted[val].forEach(dec => {
@@ -47,14 +74,25 @@ const d3formatter = (data, type) => {
     });
     return iterator;
   }
+  function normalizeAllData(count, val) {
+    var iterator = 0;
+    superSorted[val].forEach(dec => {
+      if (count > superSortedAll[iterator]) {
+        iterator++;
+      }
+    });
+    return iterator;
+  }
   const returnValue = data.reduce((acc, value) => {
 
     const dayPairs = pairKeys.map(val => {
-      const orderBookNormalizer = normalizeData((value.order_books[val].orderBookRemoveAsk - value.order_books[val].orderBookRemoveBid), val);
+      // const orderBookNormalizer = normalizeData(((value.order_books[val].orderBookModify_BIDS - value.order_books[val].orderBookRemoveBid) - (value.order_books[val].orderBookModify_ASKS - value.order_books[val].orderBookRemoveAsk)), val);
+      const orderBookNormalizer = normalizeAllData(((value.order_books[val].orderBookModify_BIDS - value.order_books[val].orderBookRemoveBid) - (value.order_books[val].orderBookModify_ASKS - value.order_books[val].orderBookRemoveAsk)), val);
+      // const tempTest = ((value.order_books[val].orderBookModify_BIDS - value.order_books[val].orderBookRemoveBid) - (value.order_books[val].orderBookModify_ASKS - value.order_books[val].orderBookRemoveAsk));
       return {
         pair: val,
         minute: Moment(value.created_at).utc().format(),
-        value:(value.order_books[val].orderBookRemoveAsk - value.order_books[val].orderBookRemoveBid),
+        value: orderBookNormalizer,
         totalChangeCount: value.order_books[val].totalChangeCount,
         askChanges: value.order_books[val].askChanges,
         bidChanges: value.order_books[val].bidChanges,
@@ -76,7 +114,7 @@ const d3formatter = (data, type) => {
 
 router.get('/poloorders/five', function(req, res) {
   var now = Moment();
-  var xMinutesAgo = now.subtract(60, 'minutes');
+  var xMinutesAgo = now.subtract(270, 'minutes');
   var xMinDate = xMinutesAgo.toDate();
   poloOrders.find({
     "created_at": {

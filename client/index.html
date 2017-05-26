@@ -70,7 +70,7 @@
               .attr('class', 'd3-tip')
               .offset([10, 0])
               .html(function(d) {
-                return "<div><p>" + d.pair + " " +  d.minute + " " + (d.orderBookRemoveAsk - d.orderBookRemoveBid) + "</p><p>Bid Removes: " + d.orderBookRemoveBid + "</p><p>Ask Removes: " + d.orderBookRemoveAsk + "</p></div>";
+                return "<div><p>" + d.pair + " " +  d.minute + " " + ((d.orderBookModify_BIDS - d.orderBookRemoveBid) - (d.orderBookModify_ASKS - d.orderBookRemoveAsk)) + "</p><p>Bid Removes: " + d.orderBookRemoveBid + "</p><p>Ask Removes: " + d.orderBookRemoveAsk + "</p><p>Bid Adds: " + d.orderBookModify_BIDS + "</p><p>Ask Adds: " + d.orderBookModify_ASKS + "</p></div>";
               })
               // .html(function(d) {
               //     return "<div><p>" + d.minute + "</p><p>" + d.pair + " : " + d.value + "</p><p>Ask Mods: " + d.orderBookModify_ASKS + "</p><p>Bid Mods: " + d.orderBookModify_BIDS + "</p><p>Buy Volume: " + d.buyVolume + "</p><p>Sell Volume: " + d.sellVolume + "</p><p>Removes: " + d.orderBookRemove + "</p></div>";
