@@ -15,12 +15,13 @@ router.get('/poloorders', function(req, res) {
 var mainPairs = ['ETH_ETC', 'ETH_ZEC', 'BTC_XRP', 'BTC_ETH', 'BTC_ETC', 'BTC_XMR', 'BTC_LTC', 'BTC_STR', 'BTC_DOGE', 'BTC_XEM', 'BTC_SC', 'BTC_SYS', 'BTC_ZEC', 'BTC_DGB', 'BTC_DASH', 'BTC_BCN'];
 
 const d3formatter = (data, type) => {
+  // var pairKeys = Object.keys(data[0].order_books);
   var pairKeys = mainPairs;
   const sortedChangesByPair = data.reduce((acc, value) => {
     pairKeys.forEach(val => {
       var current = (!acc[val]) ? [] : acc[val];
       if (value.order_books) {
-        current.push(value.order_books[val].orderBookRemoveAsk - value.order_books[val].orderBookRemoveBid)
+        current.push((value.order_books[val].orderBookModify_BIDS - value.order_books[val].orderBookRemoveBid) - (value.order_books[val].orderBookModify_ASKS - value.order_books[val].orderBookRemoveAsk))
         acc[val] = current;
       }
     })
@@ -29,17 +30,19 @@ const d3formatter = (data, type) => {
   const sortedChangesAll = data.reduce((acc, value) => {
     pairKeys.forEach(val => {
       if (value.order_books) {
-        acc.push(value.order_books[val].orderBookRemoveAsk - value.order_books[val].orderBookRemoveBid)
+        acc.push((value.order_books[val].orderBookModify_BIDS - value.order_books[val].orderBookRemoveBid) - (value.order_books[val].orderBookModify_ASKS - value.order_books[val].orderBookRemoveAsk))
       }
     })
     return acc;
   }, []);
-  console.log('Begin Sort: ', sortedChangesByPair);
-
   const n = data.length + 1;
-  const allN = (data.length + 1) * (mainPairs.length + 1)
+  console.log("Here's N: ", n);
+  const allN = sortedChangesAll.length;
+  console.log("All N: ", allN);
   const allD = Math.floor(allN / 10);
+  console.log("All D: ", allD);
   const d = Math.floor(n / 10);
+  console.log("Single D: ", d);
   function sortNumber(a,b) {
     return a - b;
   }
@@ -64,7 +67,7 @@ const d3formatter = (data, type) => {
     var dec = [s[0], s[allD], s[allD * 2], s[allD * 3], s[allD * 4], s[allD * 5], s[allD * 6], s[allD * 7], s[allD * 8], s[allD * 9]];
     return dec;
   });
-  console.log('Super Sorted: ', superSortedAll);
+  console.log("Super Sorted All", superSortedAll);
   function normalizeData(count, val) {
     var iterator = 0;
     superSorted[val].forEach(dec => {
@@ -74,10 +77,10 @@ const d3formatter = (data, type) => {
     });
     return iterator;
   }
-  function normalizeAllData(count, val) {
+  function normalizeAllData(count) {
     var iterator = 0;
-    superSorted[val].forEach(dec => {
-      if (count > superSortedAll[iterator]) {
+    superSortedAll.forEach(dec => {
+      if (count >= dec) {
         iterator++;
       }
     });
@@ -87,7 +90,7 @@ const d3formatter = (data, type) => {
 
     const dayPairs = pairKeys.map(val => {
       // const orderBookNormalizer = normalizeData(((value.order_books[val].orderBookModify_BIDS - value.order_books[val].orderBookRemoveBid) - (value.order_books[val].orderBookModify_ASKS - value.order_books[val].orderBookRemoveAsk)), val);
-      const orderBookNormalizer = normalizeAllData(((value.order_books[val].orderBookModify_BIDS - value.order_books[val].orderBookRemoveBid) - (value.order_books[val].orderBookModify_ASKS - value.order_books[val].orderBookRemoveAsk)), val);
+      const orderBookNormalizer = normalizeAllData(((value.order_books[val].orderBookModify_BIDS - value.order_books[val].orderBookRemoveBid) - (value.order_books[val].orderBookModify_ASKS - value.order_books[val].orderBookRemoveAsk)));
       // const tempTest = ((value.order_books[val].orderBookModify_BIDS - value.order_books[val].orderBookRemoveBid) - (value.order_books[val].orderBookModify_ASKS - value.order_books[val].orderBookRemoveAsk));
       return {
         pair: val,
@@ -114,7 +117,7 @@ const d3formatter = (data, type) => {
 
 router.get('/poloorders/five', function(req, res) {
   var now = Moment();
-  var xMinutesAgo = now.subtract(270, 'minutes');
+  var xMinutesAgo = now.subtract(180, 'minutes');
   var xMinDate = xMinutesAgo.toDate();
   poloOrders.find({
     "created_at": {
@@ -131,7 +134,7 @@ router.get('/poloorders/five', function(req, res) {
 
 router.get('/poloorders/thirty', function(req, res) {
   var now = Moment();
-  var xMinutesAgo = now.subtract(600, 'minutes');
+  var xMinutesAgo = now.subtract(660, 'minutes');
   var xMinDate = xMinutesAgo.toDate();
   poloOrders.find({
     "created_at": {
@@ -142,6 +145,7 @@ router.get('/poloorders/thirty', function(req, res) {
       res.json(err);
     }
     const formatted = d3formatter(data);
+    // console.log('NOrmalized', formatted);
     res.json(formatted)
   })
 });

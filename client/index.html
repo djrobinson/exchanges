@@ -50,7 +50,7 @@
 
       var heatmapChart = function(type) {
           console.log('Running agaain')
-          d3.json('http://localhost:3000/poloorders/five', function(data) {
+          d3.json('http://localhost:3000/poloorders/thirty', function(data) {
             console.log('Data: ', data);
             var pairs = data.reduce((acc, next) => {
                 if (acc.indexOf(next.pair) === -1) {
@@ -70,19 +70,19 @@
               .attr('class', 'd3-tip')
               .offset([10, 0])
               .html(function(d) {
-                return "<div><p>" + d.pair + " " +  d.minute + " " + ((d.orderBookModify_BIDS - d.orderBookRemoveBid) - (d.orderBookModify_ASKS - d.orderBookRemoveAsk)) + "</p><p>Bid Removes: " + d.orderBookRemoveBid + "</p><p>Ask Removes: " + d.orderBookRemoveAsk + "</p><p>Bid Adds: " + d.orderBookModify_BIDS + "</p><p>Ask Adds: " + d.orderBookModify_ASKS + "</p></div>";
+                return "<div><p>" + d.pair + " " +  d.minute + " " + ((d.orderBookModify_BIDS - d.orderBookRemoveBid) - (d.orderBookModify_ASKS - d.orderBookRemoveAsk)) + "</p><p>Value " + d.value + "</p><p>Ask Removes: " + d.orderBookRemoveAsk + "</p><p>Bid Adds: " + d.orderBookModify_BIDS + "</p><p>Ask Adds: " + d.orderBookModify_ASKS + "</p></div>";
               })
               // .html(function(d) {
               //     return "<div><p>" + d.minute + "</p><p>" + d.pair + " : " + d.value + "</p><p>Ask Mods: " + d.orderBookModify_ASKS + "</p><p>Bid Mods: " + d.orderBookModify_BIDS + "</p><p>Buy Volume: " + d.buyVolume + "</p><p>Sell Volume: " + d.sellVolume + "</p><p>Removes: " + d.orderBookRemove + "</p></div>";
               //   })
 
             var margin = { top: 150, right: 100, bottom: 100, left: 10 },
-                width = 10500 - margin.left,
+                width = 12000 - margin.left,
                 height = 3000 - margin.top - margin.bottom,
                 gridSize = Math.floor(height / 150),
                 legendElementWidth = gridSize,
                 buckets = 10,
-                colors = ["#a50026","#d73027","#f46d43","#fdae61","#fee08b","#d9ef8b","#a6d96a","#66bd63","#1a9850",  "#006837"], // alternatively colorbrewer.YlGnBu[9]
+                colors = ["#a50026","#d73027","#f46d43","#fdae61","#fee08b","#ffffbf","#d9ef8b","#a6d96a","#66bd63","#1a9850","#006837"], // alternatively colorbrewer.YlGnBu[9]
 
                 datasets = ["data.tsv", "data2.tsv"];
 
@@ -113,9 +113,9 @@
                   .attr("transform", "translate(" + gridSize + ", 6)")
                   .attr("transform", "rotate(-90)")
                   .attr("class", function(d, i) { return ((i >= 7 && i <= 16) ? "timeLabel mono axis axis-worktime" : "timeLabel mono axis"); });
-            var colorScale = d3.scale.quantile()
-                .domain([0, buckets - 1, d3.max(data, function (d) { return d.value; })])
-                .range(colors);
+            // var colorScale = d3.scale.quantile()
+            //     .domain([0, buckets - 1, d3.max(data, function (d) { return d.value; })])
+            //     .range(colors);
 
             var cards = svg.selectAll(".hour")
                 .data(data, function(d) {return pairs.indexOf(d.pair) +':'+times.indexOf(d.minute);});
@@ -135,32 +135,12 @@
                 .on('mouseout', tip.hide);
 
             cards.transition().duration(100)
-                .style("fill", function(d) { return colorScale(d.value); });
+                .style("fill", function(d) { return colors[d.value]; });
 
             cards.select("title").text(function(d) { return d.value; });
 
             cards.exit().remove();
 
-            var legend = svg.selectAll(".legend")
-                .data([0].concat(colorScale.quantiles()), function(d) { return d; });
-
-            legend.enter().append("g")
-                .attr("class", "legend");
-
-            legend.append("rect")
-              .attr("x", function(d, i) { return legendElementWidth * i; })
-              .attr("y", height)
-              .attr("width", legendElementWidth)
-              .attr("height", gridSize / 2)
-              .style("fill", function(d, i) { return colors[i]; });
-
-            legend.append("text")
-              .attr("class", "mono")
-              .text(function(d) { return "≥ " + Math.round(d); })
-              .attr("x", function(d, i) { return legendElementWidth * i; })
-              .attr("y", height + gridSize);
-
-            legend.exit().remove();
           });
       };
       heatmapChart();
