@@ -60,25 +60,25 @@
             }, []);
             const pairsLength = pairs.length;
             var movingAverageData = function(value) {
-                const defaultMA = {
-                  5: 0,
-                  30: 0,
-                  60: 0,
-                  120: 0,
-                  300: 0
-                }
                 var superAcc = pairs.reduce((acc, pair) => {
-                  acc[pair] = defaultMA;
+                  acc[pair] = {
+                                5: 0,
+                                30: 0,
+                                60: 0,
+                                120: 0,
+                                300: 0
+                              };
                   return acc;
                 }, {})
 
                 var movingAverages = data.reduce((acc, next, i) => {
                   if (i < (pairsLength * 1)) {
-                      console.log("Ze Acc: ", acc);
+                      console.log("Ze Acc: ", acc[next.pair][5]);
                       console.log("Ze Nex: ", next);
-                      acc[next.pair][5] += next.value;
+                      acc[next.pair][5] = next.value;
+                      return acc;
                   }
-                  return acc
+                  return acc;
                 }, superAcc);
                 console.log('Hello: ', movingAverages);
             };
