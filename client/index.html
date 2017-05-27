@@ -49,16 +49,40 @@
 
 
       var heatmapChart = function(type) {
-          console.log('Running agaain')
           d3.json('http://localhost:3000/poloorders/thirty', function(data) {
-            console.log('Data: ', data);
+            // console.log('DData: ', data);
             var pairs = data.reduce((acc, next) => {
-                if (acc.indexOf(next.pair) === -1) {
-                    acc.push(next.pair);
-                    return acc;
-                }
-                return acc;
+              if (acc.indexOf(next.pair) === -1) {
+                  acc.push(next.pair);
+                  return acc;
+              }
+              return acc;
             }, []);
+            const pairsLength = pairs.length;
+            var movingAverageData = function(value) {
+                const defaultMA = {
+                  5: 0,
+                  30: 0,
+                  60: 0,
+                  120: 0,
+                  300: 0
+                }
+                var superAcc = pairs.reduce((acc, pair) => {
+                  acc[pair] = defaultMA;
+                  return acc;
+                }, {})
+
+                var movingAverages = data.reduce((acc, next, i) => {
+                  if (i < (pairsLength * 1)) {
+                      console.log("Ze Acc: ", acc);
+                      console.log("Ze Nex: ", next);
+                      acc[next.pair][5] += next.value;
+                  }
+                  return acc
+                }, superAcc);
+                console.log('Hello: ', movingAverages);
+            };
+            movingAverageData();
             var times = data.reduce((acc, next) => {
                 if (acc.indexOf(next.minute) === -1) {
                     acc.push(next.minute);
@@ -70,21 +94,24 @@
               .attr('class', 'd3-tip')
               .offset([10, 0])
               .html(function(d) {
-                return "<div><p>" + d.pair + " " +  d.minute + " " + ((d.orderBookModify_BIDS - d.orderBookRemoveBid) - (d.orderBookModify_ASKS - d.orderBookRemoveAsk)) + "</p><p>Value " + d.value + "</p><p>Ask Removes: " + d.orderBookRemoveAsk + "</p><p>Bid Adds: " + d.orderBookModify_BIDS + "</p><p>Ask Adds: " + d.orderBookModify_ASKS + "</p></div>";
+                return "<div><p>" + d.pair + " " +  d.minute + " " + (d.bidChanges  - d.askChanges) + "</p><p>Value " + d.value + "</p></div>";
               })
               // .html(function(d) {
               //     return "<div><p>" + d.minute + "</p><p>" + d.pair + " : " + d.value + "</p><p>Ask Mods: " + d.orderBookModify_ASKS + "</p><p>Bid Mods: " + d.orderBookModify_BIDS + "</p><p>Buy Volume: " + d.buyVolume + "</p><p>Sell Volume: " + d.sellVolume + "</p><p>Removes: " + d.orderBookRemove + "</p></div>";
               //   })
 
             var margin = { top: 150, right: 100, bottom: 100, left: 10 },
-                width = 12000 - margin.left,
+                width = 24000 - margin.left,
                 height = 3000 - margin.top - margin.bottom,
                 gridSize = Math.floor(height / 150),
                 legendElementWidth = gridSize,
                 buckets = 10,
-                colors = ["#a50026","#d73027","#f46d43","#fdae61","#fee08b","#ffffbf","#d9ef8b","#a6d96a","#66bd63","#1a9850","#006837"], // alternatively colorbrewer.YlGnBu[9]
+                colors = ["#a50026","#d73027","#f46d43","#fdae61","#fee08b","white","#d9ef8b","#a6d96a","#66bd63","#1a9850","#006837"], // alternatively colorbrewer.YlGnBu[9]
 
                 datasets = ["data.tsv", "data2.tsv"];
+
+            var removeOldSvg = d3.selectAll("svg")
+                .remove();
 
             var svg = d3.select("#chart").append("svg")
                 .attr("width", width + margin.left + margin.right)
@@ -124,12 +151,12 @@
 
             cards.enter().append("rect")
                 .attr("x", function(d) { return (times.indexOf(d.minute)) * gridSize; })
-                .attr("y", function(d) { return (pairs.indexOf(d.pair)) * gridSize; })
+                .attr("y", function(d) { return (pairs.indexOf(d.pair)) * gridSize * 3; })
                 .attr("rx", 4)
                 .attr("ry", 4)
                 .attr("class", "hour bordered")
                 .attr("width", gridSize)
-                .attr("height", gridSize)
+                .attr("height", gridSize * 3)
                 .style("fill", colors[0])
                 .on('mouseover', tip.show)
                 .on('mouseout', tip.hide);
@@ -144,7 +171,9 @@
           });
       };
       heatmapChart();
-      setInterval(heatmapChart, 60000);
+      setInterval(function() {
+        heatmapChart()
+      }, 60000);
 
       // var datasetpicker = d3.select("#dataset-picker").selectAll(".dataset-button")
       //   .data(datasets);

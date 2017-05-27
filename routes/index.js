@@ -12,7 +12,7 @@ router.get('/poloorders', function(req, res) {
   });
 });
 
-var mainPairs = ['ETH_ETC', 'ETH_ZEC', 'BTC_XRP', 'BTC_ETH', 'BTC_ETC', 'BTC_XMR', 'BTC_LTC', 'BTC_STR', 'BTC_DOGE', 'BTC_XEM', 'BTC_SC', 'BTC_SYS', 'BTC_ZEC', 'BTC_DGB', 'BTC_DASH', 'BTC_BCN'];
+var mainPairs = ['BTC_XRP', 'BTC_ETH', 'BTC_ETC', 'BTC_XMR', 'BTC_LTC', 'BTC_STR', 'BTC_XEM', 'BTC_ZEC', 'BTC_DGB', 'BTC_DASH'];
 
 const d3formatter = (data, type) => {
   // var pairKeys = Object.keys(data[0].order_books);
@@ -21,7 +21,7 @@ const d3formatter = (data, type) => {
     pairKeys.forEach(val => {
       var current = (!acc[val]) ? [] : acc[val];
       if (value.order_books) {
-        current.push((value.order_books[val].orderBookModify_BIDS - value.order_books[val].orderBookRemoveBid) - (value.order_books[val].orderBookModify_ASKS - value.order_books[val].orderBookRemoveAsk))
+        current.push((value.order_books[val].bidChanges  - value.order_books[val].askChanges))
         acc[val] = current;
       }
     })
@@ -30,7 +30,7 @@ const d3formatter = (data, type) => {
   const sortedChangesAll = data.reduce((acc, value) => {
     pairKeys.forEach(val => {
       if (value.order_books) {
-        acc.push((value.order_books[val].orderBookModify_BIDS - value.order_books[val].orderBookRemoveBid) - (value.order_books[val].orderBookModify_ASKS - value.order_books[val].orderBookRemoveAsk))
+        acc.push((value.order_books[val].bidChanges  - value.order_books[val].askChanges))
       }
     })
     return acc;
@@ -50,7 +50,7 @@ const d3formatter = (data, type) => {
     pairKeys.forEach(val => {
       var current = acc[val] || 0;
       if (value.order_books) {
-        current += ((value.order_books[val].orderBookModify_BIDS - value.order_books[val].orderBookRemoveBid) - (value.order_books[val].orderBookModify_ASKS - value.order_books[val].orderBookRemoveAsk));
+        current += ((value.order_books[val].bidChanges  - value.order_books[val].askChanges));
         acc[val] = current;
       }
     });
@@ -62,6 +62,7 @@ const d3formatter = (data, type) => {
     acc[val] = [s[0], s[d], s[d * 2], s[d * 3], s[d * 4], s[d * 5], s[d * 6], s[d * 7], s[d * 8], s[d * 9]];
     return acc;
   }, {});
+  console.log('Super Sorted', superSorted);
   var superSortedAll = pairKeys.reduce((acc, val) => {
     const s = sortedChangesAll.sort(sortNumber);
     var dec = [s[0], s[allD], s[allD * 2], s[allD * 3], s[allD * 4], s[allD * 5], s[allD * 6], s[allD * 7], s[allD * 8], s[allD * 9]];
@@ -86,11 +87,19 @@ const d3formatter = (data, type) => {
     });
     return iterator;
   }
+  function movingAverage(acc, val) {
+    var endOfAcc = acc.length;
+    acc.reduce((acc2, val2) => {
+      acc2
+    }, 0);
+
+  }
+
   const returnValue = data.reduce((acc, value) => {
 
     const dayPairs = pairKeys.map(val => {
       // const orderBookNormalizer = normalizeData(((value.order_books[val].orderBookModify_BIDS - value.order_books[val].orderBookRemoveBid) - (value.order_books[val].orderBookModify_ASKS - value.order_books[val].orderBookRemoveAsk)), val);
-      const orderBookNormalizer = normalizeAllData(((value.order_books[val].orderBookModify_BIDS - value.order_books[val].orderBookRemoveBid) - (value.order_books[val].orderBookModify_ASKS - value.order_books[val].orderBookRemoveAsk)));
+      const orderBookNormalizer = normalizeData((value.order_books[val].bidChanges  - value.order_books[val].askChanges), val);
       // const tempTest = ((value.order_books[val].orderBookModify_BIDS - value.order_books[val].orderBookRemoveBid) - (value.order_books[val].orderBookModify_ASKS - value.order_books[val].orderBookRemoveAsk));
       return {
         pair: val,
@@ -134,7 +143,7 @@ router.get('/poloorders/five', function(req, res) {
 
 router.get('/poloorders/thirty', function(req, res) {
   var now = Moment();
-  var xMinutesAgo = now.subtract(660, 'minutes');
+  var xMinutesAgo = now.subtract(1200, 'minutes');
   var xMinDate = xMinutesAgo.toDate();
   poloOrders.find({
     "created_at": {
